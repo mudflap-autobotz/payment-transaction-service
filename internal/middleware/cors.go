@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"

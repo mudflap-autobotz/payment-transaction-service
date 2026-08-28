@@ -5,7 +5,7 @@ import (
 
 	"github.com/mudflap-autobotz/payment-common/apperror"
 	"github.com/mudflap-autobotz/payment-common/logger"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
