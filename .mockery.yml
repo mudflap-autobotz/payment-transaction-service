@@ -1,0 +1,10 @@
+template: testify
+dir: internal/domain/mocks
+pkgname: mocks
+filename: "{{.InterfaceName | snakecase}}.go"
+structname: "{{.InterfaceName}}"
+packages:
+  github.com/mudflap-autobotz/payment-service-go-template/internal/domain:
+    interfaces:
+      TigerbaboonRepository:
+      TigerbaboonService:
