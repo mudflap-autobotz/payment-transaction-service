@@ -41,6 +41,7 @@ func newFiberConfig(cfg *config.Config) fiber.Config {
 	fiberCfg := fiber.Config{
 		AppName:      cfg.App.Name,
 		ErrorHandler: response.Error,
+		BodyLimit:    cfg.App.BodyLimit,
 	}
 
 	if !cfg.App.TrustProxy.Enabled {

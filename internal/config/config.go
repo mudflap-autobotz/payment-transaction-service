@@ -55,6 +55,7 @@ type AppConfig struct {
 	Name              string          `env:"NAME" env-required:"true"`
 	Port              int             `env:"PORT" env-required:"true"`
 	Environment       string          `env:"ENVIRONMENT" env-required:"true"`
+	BodyLimit         int             `env:"BODY_LIMIT" env-default:"1048576"`
 	RateLimit         RateLimitConfig `env-prefix:"RATE_LIMIT_"`
 	IdentityRateLimit RateLimitConfig `env-prefix:"IDENTITY_RATE_LIMIT_"`
 
