@@ -18,10 +18,7 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 
 	log.Info().Msg("Setup router")
 
-	app := fiber.New(fiber.Config{
-		AppName:      cfg.App.Name,
-		ErrorHandler: response.Error,
-	})
+	app := fiber.New(newFiberConfig(cfg))
 
 	app.Use(fiberotel.Middleware())
 	app.Use(m.Recovery)
@@ -38,4 +35,26 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 	InitMerchantRouter(app, h, m)
 
 	return app
+}
+
+func newFiberConfig(cfg *config.Config) fiber.Config {
+	fiberCfg := fiber.Config{
+		AppName:      cfg.App.Name,
+		ErrorHandler: response.Error,
+	}
+
+	if !cfg.App.TrustProxy.Enabled {
+		return fiberCfg
+	}
+
+	fiberCfg.ProxyHeader = cfg.App.TrustProxy.Header
+	fiberCfg.EnableIPValidation = true
+	fiberCfg.TrustProxy = true
+	fiberCfg.TrustProxyConfig = fiber.TrustProxyConfig{
+		Private:  cfg.App.TrustProxy.Private,
+		Loopback: cfg.App.TrustProxy.Loopback,
+		Proxies:  cfg.App.TrustProxy.Proxies,
+	}
+
+	return fiberCfg
 }

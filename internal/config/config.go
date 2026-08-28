@@ -52,11 +52,12 @@ type TransactionConfig struct {
 }
 
 type AppConfig struct {
-	Name        string          `env:"NAME" env-required:"true"`
-	Port        int             `env:"PORT" env-required:"true"`
-	Environment string          `env:"ENVIRONMENT" env-required:"true"`
-	RateLimit   RateLimitConfig `env-prefix:"RATE_LIMIT_"`
-	Cors        CorsConfig      `env-prefix:"CORS_"`
+	Name        string           `env:"NAME" env-required:"true"`
+	Port        int              `env:"PORT" env-required:"true"`
+	Environment string           `env:"ENVIRONMENT" env-required:"true"`
+	RateLimit   RateLimitConfig  `env-prefix:"RATE_LIMIT_"`
+	Cors        CorsConfig       `env-prefix:"CORS_"`
+	TrustProxy  TrustProxyConfig `env-prefix:"TRUST_PROXY_"`
 }
 
 type RateLimitConfig struct {
@@ -69,6 +70,14 @@ type CorsConfig struct {
 	AllowMethods     []string `env:"ALLOW_METHODS" env-default:"GET,POST,PUT,PATCH,DELETE,OPTIONS"`
 	AllowHeaders     []string `env:"ALLOW_HEADERS" env-default:"*"`
 	AllowCredentials bool     `env:"ALLOW_CREDENTIALS" env-default:"false"`
+}
+
+type TrustProxyConfig struct {
+	Enabled  bool     `env:"ENABLED" env-default:"false"`
+	Header   string   `env:"HEADER" env-default:"X-Forwarded-For"`
+	Private  bool     `env:"PRIVATE" env-default:"true"`
+	Loopback bool     `env:"LOOPBACK" env-default:"true"`
+	Proxies  []string `env:"PROXIES"`
 }
 
 type DBConfig struct {

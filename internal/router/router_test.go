@@ -1,6 +1,7 @@
 package router_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,7 +63,11 @@ func testMiddlewares(t *testing.T, cfg *config.Config) *middleware.Middlewares {
 func newTestRouter(t *testing.T) *fiber.App {
 	t.Helper()
 
-	cfg := testConfig()
+	return newTestRouterWithConfig(t, testConfig())
+}
+
+func newTestRouterWithConfig(t *testing.T, cfg *config.Config) *fiber.App {
+	t.Helper()
 
 	return router.NewRouter(cfg, testHandlers(t), testMiddlewares(t, cfg))
 }
@@ -158,4 +163,74 @@ func isAPIRoute(path string) bool {
 	const apiPrefix = "/api/v1/"
 
 	return len(path) >= len(apiPrefix) && path[:len(apiPrefix)] == apiPrefix
+}
+
+func newEchoIPRouter(t *testing.T, trustProxy config.TrustProxyConfig) *fiber.App {
+	t.Helper()
+
+	cfg := testConfig()
+	cfg.App.TrustProxy = trustProxy
+
+	app := newTestRouterWithConfig(t, cfg)
+	app.Get("/client-ip", func(c fiber.Ctx) error {
+		return c.SendString(c.IP())
+	})
+
+	return app
+}
+
+func clientIPFor(t *testing.T, app *fiber.App, forwardedFor string) string {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodGet, "/client-ip", nil)
+	if forwardedFor != "" {
+		req.Header.Set(fiber.HeaderXForwardedFor, forwardedFor)
+	}
+
+	res, err := app.Test(req)
+	require.NoError(t, err)
+
+	defer func() { _ = res.Body.Close() }()
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	return string(body)
+}
+
+func TestClientIPIgnoresForwardedHeaderWhenTrustProxyDisabled(t *testing.T) {
+	app := newEchoIPRouter(t, config.TrustProxyConfig{Enabled: false})
+
+	assert.Equal(t, "0.0.0.0", clientIPFor(t, app, "203.0.113.9"))
+}
+
+func TestClientIPUsesForwardedHeaderFromATrustedProxy(t *testing.T) {
+	app := newEchoIPRouter(t, config.TrustProxyConfig{
+		Enabled: true,
+		Header:  fiber.HeaderXForwardedFor,
+		Proxies: []string{"0.0.0.0"},
+	})
+
+	assert.Equal(t, "203.0.113.9", clientIPFor(t, app, "203.0.113.9"))
+}
+
+func TestClientIPKeepsTheLeftmostUntrustedHopInAForwardedChain(t *testing.T) {
+	app := newEchoIPRouter(t, config.TrustProxyConfig{
+		Enabled: true,
+		Header:  fiber.HeaderXForwardedFor,
+		Private: true,
+		Proxies: []string{"0.0.0.0"},
+	})
+
+	assert.Equal(t, "203.0.113.9", clientIPFor(t, app, "203.0.113.9, 10.0.0.1, 10.0.0.2"))
+}
+
+func TestClientIPRejectsAMalformedForwardedHeader(t *testing.T) {
+	app := newEchoIPRouter(t, config.TrustProxyConfig{
+		Enabled: true,
+		Header:  fiber.HeaderXForwardedFor,
+		Proxies: []string{"0.0.0.0"},
+	})
+
+	assert.Equal(t, "0.0.0.0", clientIPFor(t, app, "not-an-ip"))
 }
