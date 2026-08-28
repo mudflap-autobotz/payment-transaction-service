@@ -13,19 +13,21 @@ var MiddlewareSet = wire.NewSet(
 )
 
 type Middlewares struct {
-	AuthMerchant fiber.Handler
-	Cors         fiber.Handler
-	Logger       fiber.Handler
-	Ratelimit    fiber.Handler
-	Recovery     fiber.Handler
+	AuthMerchant      fiber.Handler
+	Cors              fiber.Handler
+	Logger            fiber.Handler
+	Ratelimit         fiber.Handler
+	MerchantRatelimit fiber.Handler
+	Recovery          fiber.Handler
 }
 
 func NewMiddlewares(cfg *config.Config, issuer *jwt.Issuer) *Middlewares {
 	return &Middlewares{
-		AuthMerchant: NewAuthMerchantMiddleware(issuer),
-		Cors:         NewCorsMiddleware(cfg),
-		Logger:       NewLoggerMiddleware(cfg),
-		Ratelimit:    NewRatelimitMiddleware(cfg),
-		Recovery:     NewRecoveryMiddleware(),
+		AuthMerchant:      NewAuthMerchantMiddleware(issuer),
+		Cors:              NewCorsMiddleware(cfg),
+		Logger:            NewLoggerMiddleware(cfg),
+		Ratelimit:         NewRatelimitMiddleware(cfg),
+		MerchantRatelimit: NewMerchantRatelimitMiddleware(cfg),
+		Recovery:          NewRecoveryMiddleware(),
 	}
 }

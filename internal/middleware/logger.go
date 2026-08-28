@@ -14,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const anonymousUser = "anonymous"
+
 func NewLoggerMiddleware(cfg *config.Config) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		startTime := time.Now()
@@ -36,7 +38,7 @@ func NewLoggerMiddleware(cfg *config.Config) fiber.Handler {
 		}
 
 		requestID := requestIDFromHeader(c, spanContext)
-		userID := userIDFromHeader(c)
+		userID := userIDFromContext(c)
 
 		event := logEventForStatus(logger.Ctx(c.Context()), statusCode)
 		event.
@@ -87,12 +89,12 @@ func requestIDFromHeader(c fiber.Ctx, spanContext trace.SpanContext) string {
 	return requestID
 }
 
-func userIDFromHeader(c fiber.Ctx) string {
-	userID := c.Get("X-User-ID")
-	if userID == "" {
-		userID = "anonymous"
+func userIDFromContext(c fiber.Ctx) string {
+	if merchantID := MerchantIDFromContext(c); merchantID != uuid.Nil {
+		return merchantID.String()
 	}
-	return userID
+
+	return anonymousUser
 }
 
 func logEventForStatus(l *zerolog.Logger, statusCode int) *zerolog.Event {

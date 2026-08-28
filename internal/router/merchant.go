@@ -8,7 +8,7 @@ import (
 )
 
 func InitMerchantRouter(app *fiber.App, h *handler.Handlers, m *middleware.Middlewares) {
-	merchants := app.Group("/api/v1/merchants", m.AuthMerchant)
+	merchants := app.Group("/api/v1/merchants", m.AuthMerchant, m.MerchantRatelimit)
 
 	deposits := merchants.Group("/deposits")
 	deposits.Post("/initiate", h.DepositHandler.Initiate)

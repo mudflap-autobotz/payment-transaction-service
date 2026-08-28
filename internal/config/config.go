@@ -52,12 +52,14 @@ type TransactionConfig struct {
 }
 
 type AppConfig struct {
-	Name        string           `env:"NAME" env-required:"true"`
-	Port        int              `env:"PORT" env-required:"true"`
-	Environment string           `env:"ENVIRONMENT" env-required:"true"`
-	RateLimit   RateLimitConfig  `env-prefix:"RATE_LIMIT_"`
-	Cors        CorsConfig       `env-prefix:"CORS_"`
-	TrustProxy  TrustProxyConfig `env-prefix:"TRUST_PROXY_"`
+	Name              string          `env:"NAME" env-required:"true"`
+	Port              int             `env:"PORT" env-required:"true"`
+	Environment       string          `env:"ENVIRONMENT" env-required:"true"`
+	RateLimit         RateLimitConfig `env-prefix:"RATE_LIMIT_"`
+	IdentityRateLimit RateLimitConfig `env-prefix:"IDENTITY_RATE_LIMIT_"`
+
+	Cors       CorsConfig       `env-prefix:"CORS_"`
+	TrustProxy TrustProxyConfig `env-prefix:"TRUST_PROXY_"`
 }
 
 type RateLimitConfig struct {
