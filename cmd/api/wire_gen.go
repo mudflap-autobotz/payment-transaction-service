@@ -8,13 +8,16 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/handler"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/middleware"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/repository"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/repository/tigerbaboon"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/router"
-	tigerbaboon2 "github.com/mudflap-autobotz/payment-service-go-template/internal/service/tigerbaboon"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/handler"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/middleware"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/publisher/kafka"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/repository"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/repository/transaction"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/router"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/service/deposit"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/service/withdrawal"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/token"
 )
 
 // Injectors from wire.go:
@@ -29,16 +32,34 @@ func InitializeApp(cfg *config.Config) (*fiber.App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	tigerbaboonRepository := tigerbaboon.NewTigerbaboonRepository(writeDB, readDB)
-	tigerbaboonService := tigerbaboon2.NewTigerbaboonService(tigerbaboonRepository)
-	validate := handler.NewValidator()
-	tigerbaboonHandler := handler.NewTigerbaboonHandler(tigerbaboonService, validate)
-	handlers := &handler.Handlers{
-		TigerbaboonHandler: tigerbaboonHandler,
+	depositRepository := transaction.NewDepositRepository(writeDB, readDB)
+	eventPublisher, cleanup3, err := kafka.NewEventPublisher(cfg)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
 	}
-	middlewares := middleware.NewMiddlewares(cfg)
+	depositService := deposit.NewDepositService(depositRepository, eventPublisher, cfg)
+	validate := handler.NewValidator()
+	depositHandler := handler.NewDepositHandler(depositService, validate)
+	withdrawalRepository := transaction.NewWithdrawalRepository(writeDB, readDB)
+	withdrawalService := withdrawal.NewWithdrawalService(withdrawalRepository, eventPublisher, cfg)
+	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService, validate)
+	handlers := &handler.Handlers{
+		DepositHandler:    depositHandler,
+		WithdrawalHandler: withdrawalHandler,
+	}
+	issuer, err := token.NewIssuer(cfg)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	middlewares := middleware.NewMiddlewares(cfg, issuer)
 	app := router.NewRouter(cfg, handlers, middlewares)
 	return app, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

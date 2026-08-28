@@ -1,1 +1,1 @@
-# payment-service-go-template
+# payment-transaction-service

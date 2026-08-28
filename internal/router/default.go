@@ -2,9 +2,9 @@ package router
 
 import (
 	"github.com/mudflap-autobotz/payment-common/response"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/handler"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/middleware"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/handler"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/middleware"
 
 	fiberotel "github.com/gofiber/contrib/v3/otel"
 	"github.com/gofiber/fiber/v3"
@@ -35,7 +35,7 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 
 	InitDocsRouter(app)
 
-	InitInternalRouter(app, h, m)
+	InitMerchantRouter(app, h, m)
 
 	return app
 }
