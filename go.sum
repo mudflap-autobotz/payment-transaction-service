@@ -144,6 +144,8 @@ github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zx
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mudflap-autobotz/payment-common v0.0.4 h1:931w2mT5EyKfelPp4+Q8K/K45DtsXQZIXAKVG2mLHgE=
 github.com/mudflap-autobotz/payment-common v0.0.4/go.mod h1:gMFA0sm/7tF6usyG8Zh/NVVVYl3UA3nulGj48xzHXBo=
+github.com/mudflap-autobotz/payment-common v0.0.5 h1:zWG0jp/KzP38qHmuxRWjqRO5D48fj/XfLvYOLvPQuhI=
+github.com/mudflap-autobotz/payment-common v0.0.5/go.mod h1:gMFA0sm/7tF6usyG8Zh/NVVVYl3UA3nulGj48xzHXBo=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/philhofer/fwd v1.2.0 h1:e6DnBTl7vGY+Gz322/ASL4Gyp1FspeMvx1RNDoToZuM=
 github.com/philhofer/fwd v1.2.0/go.mod h1:RqIHx9QI14HlwKwm98g9Re5prTQ6LdeRQn+gXJFxsJM=

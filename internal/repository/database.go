@@ -21,5 +21,11 @@ func toDatabaseConfig(c config.PostgresConnConfig) database.PostgresConfig {
 		Password: c.Password,
 		Name:     c.Name,
 		SSLMode:  c.SSLMode,
+		Pool: database.PoolConfig{
+			MaxOpenConns:    c.Pool.MaxOpenConns,
+			MaxIdleConns:    c.Pool.MaxIdleConns,
+			ConnMaxLifetime: c.Pool.ConnMaxLifetime,
+			ConnMaxIdleTime: c.Pool.ConnMaxIdleTime,
+		},
 	}
 }

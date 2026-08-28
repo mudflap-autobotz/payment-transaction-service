@@ -82,12 +82,20 @@ type PostgresConfig struct {
 }
 
 type PostgresConnConfig struct {
-	Host     string `env:"HOST" env-required:"true"`
-	Port     int    `env:"PORT" env-required:"true"`
-	User     string `env:"USER" env-required:"true"`
-	Password string `env:"PASSWORD" env-required:"true"`
-	Name     string `env:"NAME" env-required:"true"`
-	SSLMode  string `env:"SSL_MODE" env-required:"true"`
+	Host     string             `env:"HOST" env-required:"true"`
+	Port     int                `env:"PORT" env-required:"true"`
+	User     string             `env:"USER" env-required:"true"`
+	Password string             `env:"PASSWORD" env-required:"true"`
+	Name     string             `env:"NAME" env-required:"true"`
+	SSLMode  string             `env:"SSL_MODE" env-required:"true"`
+	Pool     PostgresPoolConfig `env-prefix:"POOL_"`
+}
+
+type PostgresPoolConfig struct {
+	MaxOpenConns    int           `env:"MAX_OPEN_CONNS" env-default:"10"`
+	MaxIdleConns    int           `env:"MAX_IDLE_CONNS" env-default:"2"`
+	ConnMaxLifetime time.Duration `env:"CONN_MAX_LIFETIME" env-default:"5m"`
+	ConnMaxIdleTime time.Duration `env:"CONN_MAX_IDLE_TIME" env-default:"1m"`
 }
 
 type MongoConfig struct {
