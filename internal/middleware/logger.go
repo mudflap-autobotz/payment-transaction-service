@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"strings"
 	"time"
 
 	"github.com/mudflap-autobotz/payment-common/apperror"
@@ -14,7 +15,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const anonymousUser = "anonymous"
+const (
+	anonymousUser = "anonymous"
+
+	headerRequestID = "X-Request-ID"
+
+	maxRequestIDLength = 64
+)
 
 func NewLoggerMiddleware(cfg *config.Config) fiber.Handler {
 	return func(c fiber.Ctx) error {
@@ -77,7 +84,7 @@ func statusCodeFromResult(c fiber.Ctx, err error) int {
 }
 
 func requestIDFromHeader(c fiber.Ctx, spanContext trace.SpanContext) string {
-	requestID := c.Get("X-Request-ID")
+	requestID := sanitizeRequestID(c.Get(headerRequestID))
 	if requestID == "" {
 		if spanContext.HasTraceID() {
 			requestID = spanContext.TraceID().String()
@@ -85,8 +92,42 @@ func requestIDFromHeader(c fiber.Ctx, spanContext trace.SpanContext) string {
 			requestID = uuid.New().String()
 		}
 	}
-	c.Set("X-Request-ID", requestID)
+	c.Set(headerRequestID, requestID)
 	return requestID
+}
+
+func sanitizeRequestID(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+
+	for _, character := range raw {
+		if builder.Len() == maxRequestIDLength {
+			break
+		}
+		if isRequestIDCharacter(character) {
+			builder.WriteRune(character)
+		}
+	}
+
+	return builder.String()
+}
+
+func isRequestIDCharacter(character rune) bool {
+	switch {
+	case character >= 'a' && character <= 'z':
+		return true
+	case character >= 'A' && character <= 'Z':
+		return true
+	case character >= '0' && character <= '9':
+		return true
+	case character == '-' || character == '_' || character == '.':
+		return true
+	default:
+		return false
+	}
 }
 
 func userIDFromContext(c fiber.Ctx) string {

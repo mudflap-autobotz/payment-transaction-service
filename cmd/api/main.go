@@ -13,6 +13,8 @@ import (
 	"github.com/mudflap-autobotz/payment-common/tracer"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // @title Payment Transaction Service API
@@ -64,6 +66,10 @@ func setupLogger(cfg *config.Config) {
 }
 
 func setupTracing(cfg *config.Config) {
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	if !cfg.Tracer.Enabled {
 		return
