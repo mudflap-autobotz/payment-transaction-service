@@ -9,6 +9,7 @@ import (
 	"time"
 
 	commonjwt "github.com/mudflap-autobotz/payment-common/jwt"
+	"github.com/mudflap-autobotz/payment-common/jwt/jwttest"
 	"github.com/mudflap-autobotz/payment-common/response"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain"
@@ -21,9 +22,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testSecret    = "middleware-transaction-unit-test-secret"
-	merchantEmail = "shop@example.com"
+const merchantEmail = "shop@example.com"
+
+var (
+	testKeys  = jwttest.MustGenerateKeys()
+	otherKeys = jwttest.MustGenerateKeys()
 )
 
 type identityResponse struct {
@@ -31,28 +34,31 @@ type identityResponse struct {
 	Email      string `json:"email"`
 }
 
-func issuerWith(t *testing.T, secret string, ttl time.Duration) *commonjwt.Issuer {
+func newVerifier(t *testing.T) *commonjwt.Verifier {
 	t.Helper()
 
-	issuer, err := token.NewIssuer(&config.Config{JWT: config.JWTConfig{Secret: secret, TTL: ttl}})
+	verifier, err := token.NewVerifier(&config.Config{JWT: config.JWTConfig{PublicKey: testKeys.PublicPEM}})
 	require.NoError(t, err)
 
-	return issuer
+	return verifier
 }
 
-func signedToken(t *testing.T, issuer *commonjwt.Issuer, claims commonjwt.Claims) string {
+func signedToken(t *testing.T, keys jwttest.Keys, ttl time.Duration, claims commonjwt.Claims) string {
 	t.Helper()
 
-	signed, err := issuer.Issue(context.Background(), claims)
+	signer, err := commonjwt.NewSigner(commonjwt.SignerConfig{PrivateKey: keys.PrivatePEM, TTL: ttl})
+	require.NoError(t, err)
+
+	signed, err := signer.Issue(context.Background(), claims)
 	require.NoError(t, err)
 
 	return signed
 }
 
-func newGuardedApp(issuer *commonjwt.Issuer) *fiber.App {
+func newGuardedApp(verifier *commonjwt.Verifier) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: response.Error})
 
-	guarded := app.Group("/guarded", middleware.NewAuthMerchantMiddleware(issuer))
+	guarded := app.Group("/guarded", middleware.NewAuthMerchantMiddleware(verifier))
 	guarded.Get("", func(c fiber.Ctx) error {
 		return c.JSON(identityResponse{
 			MerchantID: middleware.MerchantIDFromContext(c).String(),
@@ -78,16 +84,15 @@ func requestGuarded(t *testing.T, app *fiber.App, authorization string) *http.Re
 }
 
 func TestNewAuthMerchantMiddlewareAcceptsAMerchantToken(t *testing.T) {
-	issuer := issuerWith(t, testSecret, time.Hour)
 	merchantID := uuid.New()
 
-	raw := signedToken(t, issuer, commonjwt.Claims{
+	raw := signedToken(t, testKeys, time.Hour, commonjwt.Claims{
 		UserID: merchantID,
 		Email:  merchantEmail,
 		Type:   domain.TokenTypeMerchant,
 	})
 
-	res := requestGuarded(t, newGuardedApp(issuer), "Bearer "+raw)
+	res := requestGuarded(t, newGuardedApp(newVerifier(t)), "Bearer "+raw)
 	require.Equal(t, http.StatusOK, res.StatusCode)
 
 	var identity identityResponse
@@ -98,22 +103,20 @@ func TestNewAuthMerchantMiddlewareAcceptsAMerchantToken(t *testing.T) {
 }
 
 func TestNewAuthMerchantMiddlewareRejectsInvalidCredentials(t *testing.T) {
-	issuer := issuerWith(t, testSecret, time.Hour)
-
-	adminToken := signedToken(t, issuer, commonjwt.Claims{
+	adminToken := signedToken(t, testKeys, time.Hour, commonjwt.Claims{
 		UserID: uuid.New(),
 		Email:  "admin@example.com",
 		Type:   domain.TokenTypeAdmin,
 		Roles:  []string{"super_admin"},
 	})
 
-	foreignToken := signedToken(t, issuerWith(t, "another-service-secret", time.Hour), commonjwt.Claims{
+	foreignToken := signedToken(t, otherKeys, time.Hour, commonjwt.Claims{
 		UserID: uuid.New(),
 		Email:  merchantEmail,
 		Type:   domain.TokenTypeMerchant,
 	})
 
-	expiredToken := signedToken(t, issuerWith(t, testSecret, -time.Hour), commonjwt.Claims{
+	expiredToken := signedToken(t, testKeys, -time.Hour, commonjwt.Claims{
 		UserID: uuid.New(),
 		Email:  merchantEmail,
 		Type:   domain.TokenTypeMerchant,
@@ -122,7 +125,7 @@ func TestNewAuthMerchantMiddlewareRejectsInvalidCredentials(t *testing.T) {
 	tests := map[string]string{
 		"no authorization header":      "",
 		"empty bearer token":           "Bearer ",
-		"missing bearer prefix":        signedToken(t, issuer, commonjwt.Claims{UserID: uuid.New(), Email: merchantEmail, Type: domain.TokenTypeMerchant}),
+		"missing bearer prefix":        signedToken(t, testKeys, time.Hour, commonjwt.Claims{UserID: uuid.New(), Email: merchantEmail, Type: domain.TokenTypeMerchant}),
 		"lowercase bearer prefix":      "bearer " + adminToken,
 		"admin token":                  "Bearer " + adminToken,
 		"token signed by another key":  "Bearer " + foreignToken,
@@ -130,7 +133,7 @@ func TestNewAuthMerchantMiddlewareRejectsInvalidCredentials(t *testing.T) {
 		"structurally malformed token": "Bearer not.a.jwt",
 	}
 
-	app := newGuardedApp(issuer)
+	app := newGuardedApp(newVerifier(t))
 
 	for name, authorization := range tests {
 		t.Run(name, func(t *testing.T) {

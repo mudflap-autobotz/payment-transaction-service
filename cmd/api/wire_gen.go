@@ -49,14 +49,14 @@ func InitializeApp(cfg *config.Config) (*fiber.App, func(), error) {
 		DepositHandler:    depositHandler,
 		WithdrawalHandler: withdrawalHandler,
 	}
-	issuer, err := token.NewIssuer(cfg)
+	verifier, err := token.NewVerifier(cfg)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	middlewares := middleware.NewMiddlewares(cfg, issuer)
+	middlewares := middleware.NewMiddlewares(cfg, verifier)
 	app := router.NewRouter(cfg, handlers, middlewares)
 	return app, func() {
 		cleanup3()

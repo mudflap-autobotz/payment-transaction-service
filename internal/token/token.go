@@ -8,12 +8,11 @@ import (
 )
 
 var TokenSet = wire.NewSet(
-	NewIssuer,
+	NewVerifier,
 )
 
-func NewIssuer(cfg *config.Config) (*jwt.Issuer, error) {
-	return jwt.New(jwt.Config{
-		Secret: cfg.JWT.Secret,
-		TTL:    cfg.JWT.TTL,
+func NewVerifier(cfg *config.Config) (*jwt.Verifier, error) {
+	return jwt.NewVerifier(jwt.VerifierConfig{
+		PublicKey: cfg.JWT.PublicKey,
 	})
 }

@@ -21,8 +21,7 @@ type Config struct {
 }
 
 type JWTConfig struct {
-	Secret string        `env:"SECRET" env-required:"true"`
-	TTL    time.Duration `env:"TTL" env-default:"24h"`
+	PublicKey string `env:"PUBLIC_KEY" env-required:"true"`
 }
 
 type KafkaConfig struct {

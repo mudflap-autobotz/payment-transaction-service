@@ -20,7 +20,7 @@ const (
 
 const bearerPrefix = "Bearer "
 
-func NewAuthMerchantMiddleware(issuer *jwt.Issuer) fiber.Handler {
+func NewAuthMerchantMiddleware(verifier *jwt.Verifier) fiber.Handler {
 	tracer := otel.Tracer("middleware.auth")
 
 	return func(c fiber.Ctx) error {
@@ -32,7 +32,7 @@ func NewAuthMerchantMiddleware(issuer *jwt.Issuer) fiber.Handler {
 			return domain.UnauthorizedError("missing bearer token")
 		}
 
-		claims, err := issuer.Parse(rawToken)
+		claims, err := verifier.Parse(rawToken)
 		if err != nil || claims.Type != domain.TokenTypeMerchant {
 			return domain.UnauthorizedError("invalid or expired token")
 		}

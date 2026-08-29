@@ -11,6 +11,7 @@ import (
 	"time"
 
 	commonjwt "github.com/mudflap-autobotz/payment-common/jwt"
+	"github.com/mudflap-autobotz/payment-common/jwt/jwttest"
 	"github.com/mudflap-autobotz/payment-common/response"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain"
@@ -24,28 +25,41 @@ import (
 var errDatabase = errors.New("database error")
 
 const (
-	testSecret    = "handler-transaction-unit-test-secret"
 	merchantEmail = "shop@example.com"
 	invalidUUID   = "not-a-uuid"
 )
+
+var handlerTestKeys = jwttest.MustGenerateKeys()
 
 func newApp() *fiber.App {
 	return fiber.New(fiber.Config{ErrorHandler: response.Error})
 }
 
-func testIssuer(t *testing.T) *commonjwt.Issuer {
+func testSigner(t *testing.T) *commonjwt.Signer {
 	t.Helper()
 
-	issuer, err := token.NewIssuer(&config.Config{JWT: config.JWTConfig{Secret: testSecret, TTL: time.Hour}})
+	signer, err := commonjwt.NewSigner(commonjwt.SignerConfig{
+		PrivateKey: handlerTestKeys.PrivatePEM,
+		TTL:        time.Hour,
+	})
 	require.NoError(t, err)
 
-	return issuer
+	return signer
+}
+
+func testVerifier(t *testing.T) *commonjwt.Verifier {
+	t.Helper()
+
+	verifier, err := token.NewVerifier(&config.Config{JWT: config.JWTConfig{PublicKey: handlerTestKeys.PublicPEM}})
+	require.NoError(t, err)
+
+	return verifier
 }
 
 func bearerFor(t *testing.T, subjectID uuid.UUID, email, tokenType string) string {
 	t.Helper()
 
-	signed, err := testIssuer(t).Issue(context.Background(), commonjwt.Claims{
+	signed, err := testSigner(t).Issue(context.Background(), commonjwt.Claims{
 		UserID: subjectID,
 		Email:  email,
 		Type:   tokenType,

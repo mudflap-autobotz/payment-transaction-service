@@ -27,7 +27,7 @@ func setupDepositApp(t *testing.T) (*mocks.DepositService, *fiber.App) {
 	h := handler.NewDepositHandler(svc, handler.NewValidator())
 
 	app := newApp()
-	deposits := app.Group(depositsPath, middleware.NewAuthMerchantMiddleware(testIssuer(t)))
+	deposits := app.Group(depositsPath, middleware.NewAuthMerchantMiddleware(testVerifier(t)))
 	deposits.Post("/initiate", h.Initiate)
 	deposits.Get("", h.List)
 	deposits.Get("/:id", h.Get)

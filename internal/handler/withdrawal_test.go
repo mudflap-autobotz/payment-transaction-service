@@ -27,7 +27,7 @@ func setupWithdrawalApp(t *testing.T) (*mocks.WithdrawalService, *fiber.App) {
 	h := handler.NewWithdrawalHandler(svc, handler.NewValidator())
 
 	app := newApp()
-	withdrawals := app.Group(withdrawalsPath, middleware.NewAuthMerchantMiddleware(testIssuer(t)))
+	withdrawals := app.Group(withdrawalsPath, middleware.NewAuthMerchantMiddleware(testVerifier(t)))
 	withdrawals.Post("/initiate", h.Initiate)
 	withdrawals.Get("", h.List)
 	withdrawals.Get("/:id", h.Get)

@@ -21,9 +21,9 @@ type Middlewares struct {
 	Recovery          fiber.Handler
 }
 
-func NewMiddlewares(cfg *config.Config, issuer *jwt.Issuer) *Middlewares {
+func NewMiddlewares(cfg *config.Config, verifier *jwt.Verifier) *Middlewares {
 	return &Middlewares{
-		AuthMerchant:      NewAuthMerchantMiddleware(issuer),
+		AuthMerchant:      NewAuthMerchantMiddleware(verifier),
 		Cors:              NewCorsMiddleware(cfg),
 		Logger:            NewLoggerMiddleware(cfg),
 		Ratelimit:         NewRatelimitMiddleware(cfg),

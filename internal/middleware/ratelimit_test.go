@@ -57,10 +57,9 @@ func okHandler(c fiber.Ctx) error {
 func authenticatedAs(t *testing.T, merchantID uuid.UUID) fiber.Handler {
 	t.Helper()
 
-	issuer := issuerWith(t, testSecret, time.Hour)
-	auth := middleware.NewAuthMerchantMiddleware(issuer)
+	auth := middleware.NewAuthMerchantMiddleware(newVerifier(t))
 
-	bearer := "Bearer " + signedToken(t, issuer, commonjwt.Claims{
+	bearer := "Bearer " + signedToken(t, testKeys, time.Hour, commonjwt.Claims{
 		UserID: merchantID,
 		Email:  merchantEmail,
 		Type:   domain.TokenTypeMerchant,

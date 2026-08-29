@@ -29,7 +29,7 @@ func requiredEnv() map[string]string {
 		"DB_POSTGRES_READ_NAME":      "payment_gateway",
 		"DB_POSTGRES_READ_SSL_MODE":  "disable",
 		"TRACER_ENABLED":             "false",
-		"JWT_SECRET":                 "test-secret",
+		"JWT_PUBLIC_KEY":             "test-public-key",
 		"PROMPTPAY_TARGET":           "0812345678",
 	}
 }
@@ -51,7 +51,7 @@ func TestLoadConfigAppliesDefaults(t *testing.T) {
 	assert.Equal(t, "payment-transaction-service", cfg.App.Name)
 	assert.Equal(t, 3001, cfg.App.Port)
 
-	assert.Equal(t, 24*time.Hour, cfg.JWT.TTL)
+	assert.Equal(t, "test-public-key", cfg.JWT.PublicKey)
 
 	assert.False(t, cfg.Kafka.Enabled)
 	assert.Equal(t, []string{"localhost:9092"}, cfg.Kafka.Brokers)
@@ -81,7 +81,6 @@ func TestLoadConfigAppliesDefaults(t *testing.T) {
 
 func TestLoadConfigOverridesDefaults(t *testing.T) {
 	env := requiredEnv()
-	env["JWT_TTL"] = "15m"
 	env["KAFKA_ENABLED"] = "true"
 	env["KAFKA_BROKERS"] = "kafka-a:9092,kafka-b:9092"
 	env["PROMPTPAY_TARGET_TYPE"] = "NATID"
@@ -94,7 +93,6 @@ func TestLoadConfigOverridesDefaults(t *testing.T) {
 	cfg, err := config.LoadConfig()
 	require.NoError(t, err)
 
-	assert.Equal(t, 15*time.Minute, cfg.JWT.TTL)
 	assert.True(t, cfg.Kafka.Enabled)
 	assert.Equal(t, []string{"kafka-a:9092", "kafka-b:9092"}, cfg.Kafka.Brokers)
 	assert.Equal(t, "NATID", cfg.PromptPay.TargetType)
@@ -106,7 +104,7 @@ func TestLoadConfigOverridesDefaults(t *testing.T) {
 
 func TestLoadConfigFailsWithoutRequiredEnv(t *testing.T) {
 	tests := []string{
-		"JWT_SECRET",
+		"JWT_PUBLIC_KEY",
 		"PROMPTPAY_TARGET",
 		"APP_NAME",
 		"DB_POSTGRES_WRITE_HOST",

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mudflap-autobotz/payment-common/jwt/jwttest"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain/mocks"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/handler"
@@ -19,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const routerTestSecret = "router-unit-test-secret"
+var routerTestKeys = jwttest.MustGenerateKeys()
 
 type registeredRoute struct {
 	method string
@@ -35,7 +36,7 @@ func testConfig() *config.Config {
 		AllowMethods: []string{fiber.MethodGet, fiber.MethodPost},
 		AllowHeaders: []string{"*"},
 	}
-	cfg.JWT = config.JWTConfig{Secret: routerTestSecret, TTL: time.Hour}
+	cfg.JWT = config.JWTConfig{PublicKey: routerTestKeys.PublicPEM}
 
 	return cfg
 }
@@ -54,10 +55,10 @@ func testHandlers(t *testing.T) *handler.Handlers {
 func testMiddlewares(t *testing.T, cfg *config.Config) *middleware.Middlewares {
 	t.Helper()
 
-	issuer, err := token.NewIssuer(cfg)
+	verifier, err := token.NewVerifier(cfg)
 	require.NoError(t, err)
 
-	return middleware.NewMiddlewares(cfg, issuer)
+	return middleware.NewMiddlewares(cfg, verifier)
 }
 
 func newTestRouter(t *testing.T) *fiber.App {
