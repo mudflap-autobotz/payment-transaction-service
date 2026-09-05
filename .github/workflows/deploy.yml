@@ -39,6 +39,9 @@ jobs:
           go-version: '1.26'
           cache: true
 
+      - name: Generate OpenAPI spec
+        run: make docs
+
       - run: go vet ./...
       - run: go test ./... -race -count=1
 
