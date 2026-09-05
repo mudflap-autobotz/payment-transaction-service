@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/domain"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/repository/tigerbaboon"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/repository/transaction"
 
 	"github.com/google/wire"
 )
@@ -10,7 +10,9 @@ import (
 var RepositorySet = wire.NewSet(
 	NewWriteDB,
 	NewReadDB,
-	tigerbaboon.NewTigerbaboonRepository,
+	transaction.NewDepositRepository,
+	transaction.NewWithdrawalRepository,
 
-	wire.Bind(new(domain.TigerbaboonRepository), new(*tigerbaboon.TigerbaboonRepository)),
+	wire.Bind(new(domain.DepositRepository), new(*transaction.DepositRepository)),
+	wire.Bind(new(domain.WithdrawalRepository), new(*transaction.WithdrawalRepository)),
 )

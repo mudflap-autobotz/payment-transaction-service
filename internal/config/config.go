@@ -13,14 +13,53 @@ type Config struct {
 	Database DBConfig     `env-prefix:"DB_"`
 	Log      LogConfig    `env-prefix:"LOG_"`
 	Tracer   TracerConfig `env-prefix:"TRACER_"`
+
+	JWT         JWTConfig         `env-prefix:"JWT_"`
+	Kafka       KafkaConfig       `env-prefix:"KAFKA_"`
+	PromptPay   PromptPayConfig   `env-prefix:"PROMPTPAY_"`
+	Transaction TransactionConfig `env-prefix:"TRANSACTION_"`
+}
+
+type JWTConfig struct {
+	PublicKey string `env:"PUBLIC_KEY" env-required:"true"`
+}
+
+type KafkaConfig struct {
+	Enabled                bool          `env:"ENABLED" env-default:"false"`
+	Brokers                []string      `env:"BROKERS" env-default:"localhost:9092"`
+	TopicDepositCreated    string        `env:"TOPIC_DEPOSIT_CREATED" env-default:"deposit.created"`
+	TopicWithdrawalCreated string        `env:"TOPIC_WITHDRAWAL_CREATED" env-default:"withdrawal.created"`
+	WriteTimeout           time.Duration `env:"WRITE_TIMEOUT" env-default:"5s"`
+	PublishTimeout         time.Duration `env:"PUBLISH_TIMEOUT" env-default:"5s"`
+	AllowAutoTopicCreation bool          `env:"ALLOW_AUTO_TOPIC_CREATION" env-default:"true"`
+}
+
+type PromptPayConfig struct {
+	TargetType   string `env:"TARGET_TYPE" env-default:"MOBILE"`
+	Target       string `env:"TARGET" env-required:"true"`
+	MerchantName string `env:"MERCHANT_NAME" env-default:"PAYMENT GATEWAY"`
+	MerchantCity string `env:"MERCHANT_CITY" env-default:"BANGKOK"`
+}
+
+type TransactionConfig struct {
+	MinDeposit       string        `env:"MIN_DEPOSIT" env-default:"100.00"`
+	MaxDeposit       string        `env:"MAX_DEPOSIT" env-default:"1000000.00"`
+	MinWithdrawal    string        `env:"MIN_WITHDRAWAL" env-default:"100.00"`
+	MaxWithdrawal    string        `env:"MAX_WITHDRAWAL" env-default:"500000.00"`
+	QRExpiry         time.Duration `env:"QR_EXPIRY" env-default:"30m"`
+	AllowedBankCodes []string      `env:"ALLOWED_BANK_CODES" env-default:"SCB,KTB,BAY,BBL"`
 }
 
 type AppConfig struct {
-	Name        string          `env:"NAME" env-required:"true"`
-	Port        int             `env:"PORT" env-required:"true"`
-	Environment string          `env:"ENVIRONMENT" env-required:"true"`
-	RateLimit   RateLimitConfig `env-prefix:"RATE_LIMIT_"`
-	Cors        CorsConfig      `env-prefix:"CORS_"`
+	Name              string          `env:"NAME" env-required:"true"`
+	Port              int             `env:"PORT" env-required:"true"`
+	Environment       string          `env:"ENVIRONMENT" env-required:"true"`
+	BodyLimit         int             `env:"BODY_LIMIT" env-default:"1048576"`
+	RateLimit         RateLimitConfig `env-prefix:"RATE_LIMIT_"`
+	IdentityRateLimit RateLimitConfig `env-prefix:"IDENTITY_RATE_LIMIT_"`
+
+	Cors       CorsConfig       `env-prefix:"CORS_"`
+	TrustProxy TrustProxyConfig `env-prefix:"TRUST_PROXY_"`
 }
 
 type RateLimitConfig struct {
@@ -35,6 +74,14 @@ type CorsConfig struct {
 	AllowCredentials bool     `env:"ALLOW_CREDENTIALS" env-default:"false"`
 }
 
+type TrustProxyConfig struct {
+	Enabled  bool     `env:"ENABLED" env-default:"false"`
+	Header   string   `env:"HEADER" env-default:"X-Forwarded-For"`
+	Private  bool     `env:"PRIVATE" env-default:"true"`
+	Loopback bool     `env:"LOOPBACK" env-default:"true"`
+	Proxies  []string `env:"PROXIES"`
+}
+
 type DBConfig struct {
 	Postgres PostgresConfig `env-prefix:"POSTGRES_"`
 	Mongo    MongoConfig    `env-prefix:"MONGO_"`
@@ -46,12 +93,20 @@ type PostgresConfig struct {
 }
 
 type PostgresConnConfig struct {
-	Host     string `env:"HOST" env-required:"true"`
-	Port     int    `env:"PORT" env-required:"true"`
-	User     string `env:"USER" env-required:"true"`
-	Password string `env:"PASSWORD" env-required:"true"`
-	Name     string `env:"NAME" env-required:"true"`
-	SSLMode  string `env:"SSL_MODE" env-required:"true"`
+	Host     string             `env:"HOST" env-required:"true"`
+	Port     int                `env:"PORT" env-required:"true"`
+	User     string             `env:"USER" env-required:"true"`
+	Password string             `env:"PASSWORD" env-required:"true"`
+	Name     string             `env:"NAME" env-required:"true"`
+	SSLMode  string             `env:"SSL_MODE" env-required:"true"`
+	Pool     PostgresPoolConfig `env-prefix:"POOL_"`
+}
+
+type PostgresPoolConfig struct {
+	MaxOpenConns    int           `env:"MAX_OPEN_CONNS" env-default:"10"`
+	MaxIdleConns    int           `env:"MAX_IDLE_CONNS" env-default:"2"`
+	ConnMaxLifetime time.Duration `env:"CONN_MAX_LIFETIME" env-default:"5m"`
+	ConnMaxIdleTime time.Duration `env:"CONN_MAX_IDLE_TIME" env-default:"1m"`
 }
 
 type MongoConfig struct {

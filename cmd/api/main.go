@@ -11,18 +11,23 @@ import (
 	"github.com/gofiber/fiber/v3"
 	logger "github.com/mudflap-autobotz/payment-common/logger"
 	"github.com/mudflap-autobotz/payment-common/tracer"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
-// @title Go Template API
+// @title Payment Transaction Service API
 // @version 1.0
-// @description API documentation for the go-template service.
+// @description API documentation for the payment transaction service.
 // @BasePath /api/v1
-// @tag.name internal/tigerbaboons
-// @tag.x-displayName Tigerbaboon
-// @tag.description Tigerbaboon management
-// @x-tagGroups [{"name":"Internal","tags":["internal/tigerbaboons"]}]
+// @tag.name merchants/deposits
+// @tag.x-displayName Deposits
+// @tag.description Merchant deposits via PromptPay QR
+// @tag.name merchants/withdrawals
+// @tag.x-displayName Withdrawals
+// @tag.description Merchant withdrawals via bank transfer
+// @x-tagGroups [{"name":"Merchant","tags":["merchants/deposits","merchants/withdrawals"]}]
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -61,6 +66,10 @@ func setupLogger(cfg *config.Config) {
 }
 
 func setupTracing(cfg *config.Config) {
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	if !cfg.Tracer.Enabled {
 		return

@@ -1,17 +1,26 @@
 package middleware
 
 import (
+	"strings"
 	"time"
 
 	"github.com/mudflap-autobotz/payment-common/apperror"
 	"github.com/mudflap-autobotz/payment-common/logger"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+)
+
+const (
+	anonymousUser = "anonymous"
+
+	headerRequestID = "X-Request-ID"
+
+	maxRequestIDLength = 64
 )
 
 func NewLoggerMiddleware(cfg *config.Config) fiber.Handler {
@@ -36,7 +45,7 @@ func NewLoggerMiddleware(cfg *config.Config) fiber.Handler {
 		}
 
 		requestID := requestIDFromHeader(c, spanContext)
-		userID := userIDFromHeader(c)
+		userID := userIDFromContext(c)
 
 		event := logEventForStatus(logger.Ctx(c.Context()), statusCode)
 		event.
@@ -75,7 +84,7 @@ func statusCodeFromResult(c fiber.Ctx, err error) int {
 }
 
 func requestIDFromHeader(c fiber.Ctx, spanContext trace.SpanContext) string {
-	requestID := c.Get("X-Request-ID")
+	requestID := sanitizeRequestID(c.Get(headerRequestID))
 	if requestID == "" {
 		if spanContext.HasTraceID() {
 			requestID = spanContext.TraceID().String()
@@ -83,16 +92,50 @@ func requestIDFromHeader(c fiber.Ctx, spanContext trace.SpanContext) string {
 			requestID = uuid.New().String()
 		}
 	}
-	c.Set("X-Request-ID", requestID)
+	c.Set(headerRequestID, requestID)
 	return requestID
 }
 
-func userIDFromHeader(c fiber.Ctx) string {
-	userID := c.Get("X-User-ID")
-	if userID == "" {
-		userID = "anonymous"
+func sanitizeRequestID(raw string) string {
+	if raw == "" {
+		return ""
 	}
-	return userID
+
+	var builder strings.Builder
+
+	for _, character := range raw {
+		if builder.Len() == maxRequestIDLength {
+			break
+		}
+		if isRequestIDCharacter(character) {
+			builder.WriteRune(character)
+		}
+	}
+
+	return builder.String()
+}
+
+func isRequestIDCharacter(character rune) bool {
+	switch {
+	case character >= 'a' && character <= 'z':
+		return true
+	case character >= 'A' && character <= 'Z':
+		return true
+	case character >= '0' && character <= '9':
+		return true
+	case character == '-' || character == '_' || character == '.':
+		return true
+	default:
+		return false
+	}
+}
+
+func userIDFromContext(c fiber.Ctx) string {
+	if merchantID := MerchantIDFromContext(c); merchantID != uuid.Nil {
+		return merchantID.String()
+	}
+
+	return anonymousUser
 }
 
 func logEventForStatus(l *zerolog.Logger, statusCode int) *zerolog.Event {

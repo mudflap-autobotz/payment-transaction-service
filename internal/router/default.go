@@ -2,9 +2,9 @@ package router
 
 import (
 	"github.com/mudflap-autobotz/payment-common/response"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/handler"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/middleware"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/handler"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/middleware"
 
 	fiberotel "github.com/gofiber/contrib/v3/otel"
 	"github.com/gofiber/fiber/v3"
@@ -18,10 +18,7 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 
 	log.Info().Msg("Setup router")
 
-	app := fiber.New(fiber.Config{
-		AppName:      cfg.App.Name,
-		ErrorHandler: response.Error,
-	})
+	app := fiber.New(newFiberConfig(cfg))
 
 	app.Use(fiberotel.Middleware())
 	app.Use(m.Recovery)
@@ -35,7 +32,30 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 
 	InitDocsRouter(app)
 
-	InitInternalRouter(app, h, m)
+	InitMerchantRouter(app, h, m)
 
 	return app
+}
+
+func newFiberConfig(cfg *config.Config) fiber.Config {
+	fiberCfg := fiber.Config{
+		AppName:      cfg.App.Name,
+		ErrorHandler: response.Error,
+		BodyLimit:    cfg.App.BodyLimit,
+	}
+
+	if !cfg.App.TrustProxy.Enabled {
+		return fiberCfg
+	}
+
+	fiberCfg.ProxyHeader = cfg.App.TrustProxy.Header
+	fiberCfg.EnableIPValidation = true
+	fiberCfg.TrustProxy = true
+	fiberCfg.TrustProxyConfig = fiber.TrustProxyConfig{
+		Private:  cfg.App.TrustProxy.Private,
+		Loopback: cfg.App.TrustProxy.Loopback,
+		Proxies:  cfg.App.TrustProxy.Proxies,
+	}
+
+	return fiberCfg
 }

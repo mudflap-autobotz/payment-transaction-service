@@ -4,7 +4,7 @@ const (
 	DefaultPaginationPage    = 1
 	DefaultPaginationSize    = 10
 	DefaultPaginationOrderBy = "desc"
-	DefaultPaginationSortBy  = "id"
+	DefaultPaginationSortBy  = "created_at"
 )
 
 type ListQuery struct {

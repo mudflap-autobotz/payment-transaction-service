@@ -4,7 +4,10 @@ pkgname: mocks
 filename: "{{.InterfaceName | snakecase}}.go"
 structname: "{{.InterfaceName}}"
 packages:
-  github.com/mudflap-autobotz/payment-service-go-template/internal/domain:
+  github.com/mudflap-autobotz/payment-transaction-service/internal/domain:
     interfaces:
-      TigerbaboonRepository:
-      TigerbaboonService:
+      DepositRepository:
+      DepositService:
+      WithdrawalRepository:
+      WithdrawalService:
+      EventPublisher:

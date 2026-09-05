@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/mudflap-autobotz/payment-common/database"
-	"github.com/mudflap-autobotz/payment-service-go-template/internal/config"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 )
 
 func NewWriteDB(cfg *config.Config) (*database.WriteDB, func(), error) {
@@ -21,5 +21,11 @@ func toDatabaseConfig(c config.PostgresConnConfig) database.PostgresConfig {
 		Password: c.Password,
 		Name:     c.Name,
 		SSLMode:  c.SSLMode,
+		Pool: database.PoolConfig{
+			MaxOpenConns:    c.Pool.MaxOpenConns,
+			MaxIdleConns:    c.Pool.MaxIdleConns,
+			ConnMaxLifetime: c.Pool.ConnMaxLifetime,
+			ConnMaxIdleTime: c.Pool.ConnMaxIdleTime,
+		},
 	}
 }
