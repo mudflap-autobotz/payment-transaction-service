@@ -1,0 +1,153 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v[0-9]*.[0-9]*.[0-9]*']
+  workflow_dispatch:
+
+env:
+  SERVICE_NAME: payment-transaction
+  REGION: asia-southeast1
+  REGISTRY: asia-southeast1-docker.pkg.dev
+  PROJECT_ID: payment-506805
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/mudflap-autobotz/*
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure private module access
+        env:
+          PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+        run: |
+          test -n "${PRIVATE_REPO_TOKEN}" || { echo "PRIVATE_REPO_TOKEN is empty"; exit 1; }
+          git config --global url."https://x-access-token:${PRIVATE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git ls-remote -q https://github.com/mudflap-autobotz/payment-common >/dev/null
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - run: go vet ./...
+      - run: go test ./... -race -count=1
+
+  build-push:
+    if: github.ref_name == 'develop' || startsWith(github.ref, 'refs/tags/')
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: meta
+        env:
+          ENVIRONMENT: ${{ startsWith(github.ref, 'refs/tags/') && 'prod' || 'sit' }}
+        run: |
+          echo "environment=${ENVIRONMENT}" >> "$GITHUB_OUTPUT"
+          echo "image=${REGISTRY}/${PROJECT_ID}/payment-${ENVIRONMENT}/${SERVICE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${REGISTRY} --quiet
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+          build-args: |
+            GITHUB_USERNAME=x-access-token
+            GITHUB_TOKEN=${{ secrets.PRIVATE_REPO_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  deploy-sit:
+    if: github.ref_name == 'develop'
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: sit
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy revision
+        run: |
+          gcloud run services update ${SERVICE_NAME}-sit \
+            --region ${REGION} \
+            --image ${{ needs.build-push.outputs.image }}
+
+  deploy-prod:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Tag must point at a commit on main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "${{ github.sha }}" FETCH_HEAD
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy revision with no traffic
+        id: revision
+        run: |
+          gcloud run services update ${SERVICE_NAME}-prod \
+            --region ${REGION} \
+            --image ${{ needs.build-push.outputs.image }} \
+            --no-traffic \
+            --tag candidate
+
+      - name: Smoke test candidate revision
+        run: |
+          CANDIDATE_URL="$(gcloud run services describe ${SERVICE_NAME}-prod \
+            --region ${REGION} \
+            --format='value(status.traffic.filter("tag":"candidate").extract("url"))' | tr -d '[]')"
+          echo "candidate: ${CANDIDATE_URL}"
+          for i in $(seq 1 10); do
+            CODE="$(curl -sS -o /dev/null -w '%{http_code}' "${CANDIDATE_URL}/healthcheck" || true)"
+            [ "$CODE" = "200" ] && exit 0
+            sleep 3
+          done
+          echo "healthcheck failed, candidate holds no traffic"
+          exit 1
+
+      - name: Shift traffic to new revision
+        run: |
+          gcloud run services update-traffic ${SERVICE_NAME}-prod \
+            --region ${REGION} \
+            --to-latest
