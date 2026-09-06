@@ -5,16 +5,15 @@ RUN apk add --no-cache git ca-certificates
 
 WORKDIR /app
 
-ARG GITHUB_USERNAME
-ARG GITHUB_TOKEN
-
-RUN git config --global url."https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-
-ENV GOPRIVATE="github.com/aaa-research/*"
+ENV GOPRIVATE="github.com/mudflap-autobotz/*"
 
 COPY go.mod go.sum ./
 
-RUN go mod download
+RUN --mount=type=secret,id=github_token \
+    export GIT_CONFIG_COUNT=1 && \
+    export GIT_CONFIG_KEY_0="url.https://x-access-token:$(cat /run/secrets/github_token)@github.com/.insteadOf" && \
+    export GIT_CONFIG_VALUE_0="https://github.com/" && \
+    go mod download
 
 COPY . .
 

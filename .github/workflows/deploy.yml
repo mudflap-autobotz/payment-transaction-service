@@ -78,9 +78,8 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.image }}
-          build-args: |
-            GITHUB_USERNAME=x-access-token
-            GITHUB_TOKEN=${{ secrets.PRIVATE_REPO_TOKEN }}
+          secrets: |
+            github_token=${{ secrets.PRIVATE_REPO_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
