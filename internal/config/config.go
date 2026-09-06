@@ -16,6 +16,7 @@ type Config struct {
 
 	JWT         JWTConfig         `env-prefix:"JWT_"`
 	Kafka       KafkaConfig       `env-prefix:"KAFKA_"`
+	Redis       RedisConfig       `env-prefix:"REDIS_"`
 	PromptPay   PromptPayConfig   `env-prefix:"PROMPTPAY_"`
 	Transaction TransactionConfig `env-prefix:"TRANSACTION_"`
 }
@@ -32,6 +33,18 @@ type KafkaConfig struct {
 	WriteTimeout           time.Duration `env:"WRITE_TIMEOUT" env-default:"5s"`
 	PublishTimeout         time.Duration `env:"PUBLISH_TIMEOUT" env-default:"5s"`
 	AllowAutoTopicCreation bool          `env:"ALLOW_AUTO_TOPIC_CREATION" env-default:"true"`
+}
+
+type RedisConfig struct {
+	Enabled          bool          `env:"ENABLED" env-default:"false"`
+	Addr             string        `env:"ADDR"`
+	Password         string        `env:"PASSWORD"`
+	Database         int           `env:"DATABASE" env-default:"0"`
+	PoolSize         int           `env:"POOL_SIZE" env-default:"10"`
+	DialTimeout      time.Duration `env:"DIAL_TIMEOUT" env-default:"500ms"`
+	ReadTimeout      time.Duration `env:"READ_TIMEOUT" env-default:"500ms"`
+	WriteTimeout     time.Duration `env:"WRITE_TIMEOUT" env-default:"500ms"`
+	FailoverCooldown time.Duration `env:"FAILOVER_COOLDOWN" env-default:"15s"`
 }
 
 type PromptPayConfig struct {

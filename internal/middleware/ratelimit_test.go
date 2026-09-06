@@ -7,6 +7,7 @@ import (
 	"time"
 
 	commonjwt "github.com/mudflap-autobotz/payment-common/jwt"
+	"github.com/mudflap-autobotz/payment-common/ratelimit"
 	"github.com/mudflap-autobotz/payment-common/response"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain"
@@ -30,6 +31,15 @@ func ratelimitConfig(maxRequests int) *config.Config {
 	cfg.App.IdentityRateLimit = config.RateLimitConfig{MaxRequests: maxRequests, Expiration: time.Minute}
 
 	return cfg
+}
+
+func ratelimitStorage(t *testing.T) fiber.Storage {
+	t.Helper()
+
+	storage := ratelimit.NewMemoryStorage()
+	t.Cleanup(func() { _ = storage.Close() })
+
+	return storage
 }
 
 func newRatelimitApp(limit fiber.Handler, paths ...string) *fiber.App {
@@ -96,7 +106,7 @@ func statusesFor(t *testing.T, app *fiber.App, path string, attempts int, header
 
 func TestNewRatelimitMiddleware(t *testing.T) {
 	t.Run("rejects a caller that exceeds the quota", func(t *testing.T) {
-		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2)), ratelimitPath)
+		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)), ratelimitPath)
 
 		statuses := statusesFor(t, app, ratelimitPath, 3, nil)
 
@@ -104,7 +114,7 @@ func TestNewRatelimitMiddleware(t *testing.T) {
 	})
 
 	t.Run("leaves the healthcheck uncounted", func(t *testing.T) {
-		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2)), healthcheckPath)
+		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)), healthcheckPath)
 
 		statuses := statusesFor(t, app, healthcheckPath, 5, nil)
 
@@ -112,7 +122,7 @@ func TestNewRatelimitMiddleware(t *testing.T) {
 	})
 
 	t.Run("keys on the address and ignores a spoofed user header", func(t *testing.T) {
-		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2)), ratelimitPath)
+		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)), ratelimitPath)
 
 		spoofed := map[string]string{userIDHeader: uuid.NewString()}
 
@@ -122,7 +132,7 @@ func TestNewRatelimitMiddleware(t *testing.T) {
 	})
 
 	t.Run("keeps one bucket for a caller that rotates the user header", func(t *testing.T) {
-		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2)), ratelimitPath)
+		app := newRatelimitApp(middleware.NewRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)), ratelimitPath)
 
 		statuses := make([]int, 0, 3)
 		for range 3 {
@@ -137,7 +147,7 @@ func TestNewRatelimitMiddleware(t *testing.T) {
 func TestNewMerchantRatelimitMiddleware(t *testing.T) {
 	t.Run("rejects a merchant that exceeds the quota", func(t *testing.T) {
 		app := newIdentityRatelimitApp(
-			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2)),
+			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)),
 			authenticatedAs(t, uuid.New()),
 		)
 
@@ -147,7 +157,7 @@ func TestNewMerchantRatelimitMiddleware(t *testing.T) {
 	})
 
 	t.Run("counts two merchants from one address separately", func(t *testing.T) {
-		limit := middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2))
+		limit := middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t))
 
 		first := newIdentityRatelimitApp(limit, authenticatedAs(t, uuid.New()))
 		second := newIdentityRatelimitApp(limit, authenticatedAs(t, uuid.New()))
@@ -158,7 +168,7 @@ func TestNewMerchantRatelimitMiddleware(t *testing.T) {
 
 	t.Run("skips a request that carries no identity", func(t *testing.T) {
 		app := newIdentityRatelimitApp(
-			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2)),
+			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)),
 			func(c fiber.Ctx) error { return c.Next() },
 		)
 
@@ -169,7 +179,7 @@ func TestNewMerchantRatelimitMiddleware(t *testing.T) {
 
 	t.Run("ignores a spoofed user header", func(t *testing.T) {
 		app := newIdentityRatelimitApp(
-			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2)),
+			middleware.NewMerchantRatelimitMiddleware(ratelimitConfig(2), ratelimitStorage(t)),
 			authenticatedAs(t, uuid.New()),
 		)
 
