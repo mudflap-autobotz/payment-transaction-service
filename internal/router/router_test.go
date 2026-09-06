@@ -49,6 +49,7 @@ func testHandlers(t *testing.T) *handler.Handlers {
 	return &handler.Handlers{
 		DepositHandler:    handler.NewDepositHandler(mocks.NewDepositService(t), v),
 		WithdrawalHandler: handler.NewWithdrawalHandler(mocks.NewWithdrawalService(t), v),
+		SummaryHandler:    handler.NewSummaryHandler(mocks.NewSummaryService(t)),
 	}
 }
 
@@ -85,6 +86,7 @@ func registeredRoutes(app *fiber.App) map[registeredRoute]bool {
 
 func merchantRoutes() []registeredRoute {
 	return []registeredRoute{
+		{method: http.MethodGet, path: "/api/v1/merchants/summary"},
 		{method: http.MethodPost, path: "/api/v1/merchants/deposits/initiate"},
 		{method: http.MethodGet, path: "/api/v1/merchants/deposits"},
 		{method: http.MethodGet, path: "/api/v1/merchants/deposits/:id"},
@@ -126,6 +128,7 @@ func TestMerchantRoutesRejectAnUnauthenticatedCaller(t *testing.T) {
 	app := newTestRouter(t)
 
 	protected := []registeredRoute{
+		{method: http.MethodGet, path: "/api/v1/merchants/summary"},
 		{method: http.MethodPost, path: "/api/v1/merchants/deposits/initiate"},
 		{method: http.MethodGet, path: "/api/v1/merchants/deposits"},
 		{method: http.MethodGet, path: "/api/v1/merchants/deposits/0199ae4c-1c8e-7000-8000-000000000001"},

@@ -23,6 +23,8 @@ type DepositQuery struct {
 
 	MerchantID uuid.UUID
 	Status     string
+	DateFrom   *time.Time
+	DateTo     *time.Time
 }
 
 type CreateDeposit struct {

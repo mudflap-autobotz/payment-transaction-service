@@ -133,6 +133,8 @@ func (r DepositRepository) List(ctx context.Context, query domain.DepositQuery) 
 		selectQuery = selectQuery.Where("t.status = ?", query.Status)
 	}
 
+	selectQuery = applyTransactionFilters(selectQuery, query.ListQuery, query.DateFrom, query.DateTo)
+
 	totalItem, err := selectQuery.
 		Order("t."+query.SortBy+" "+query.OrderBy).
 		Limit(query.Size).

@@ -16,6 +16,7 @@ var HandlerSet = wire.NewSet(
 	NewValidator,
 	NewDepositHandler,
 	NewWithdrawalHandler,
+	NewSummaryHandler,
 
 	wire.Struct(new(Handlers), "*"),
 )
@@ -27,6 +28,7 @@ func NewValidator() *validator.Validate {
 type Handlers struct {
 	DepositHandler    *DepositHandler
 	WithdrawalHandler *WithdrawalHandler
+	SummaryHandler    *SummaryHandler
 }
 
 func actorFrom(c fiber.Ctx) domain.Actor {
