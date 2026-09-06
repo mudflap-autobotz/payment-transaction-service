@@ -136,9 +136,21 @@ func (h *DepositHandler) queryFrom(c fiber.Ctx) (domain.DepositQuery, error) {
 		return domain.DepositQuery{}, response.NewValidateFormError(err)
 	}
 
+	dateFrom, err := dto.OptionalTime(query.DateFrom)
+	if err != nil {
+		return domain.DepositQuery{}, response.NewValidateFormError(err)
+	}
+
+	dateTo, err := dto.OptionalTime(query.DateTo)
+	if err != nil {
+		return domain.DepositQuery{}, response.NewValidateFormError(err)
+	}
+
 	return domain.DepositQuery{
 		ListQuery:  query.ToListQuery(),
 		MerchantID: middleware.MerchantIDFromContext(c),
 		Status:     query.Status,
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
 	}, nil
 }

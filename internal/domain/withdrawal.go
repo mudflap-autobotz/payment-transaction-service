@@ -22,6 +22,8 @@ type WithdrawalQuery struct {
 
 	MerchantID uuid.UUID
 	Status     string
+	DateFrom   *time.Time
+	DateTo     *time.Time
 }
 
 type CreateWithdrawal struct {

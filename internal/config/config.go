@@ -54,12 +54,22 @@ type AppConfig struct {
 	Name              string          `env:"NAME" env-required:"true"`
 	Port              int             `env:"PORT" env-required:"true"`
 	Environment       string          `env:"ENVIRONMENT" env-required:"true"`
+	Timezone          string          `env:"TIMEZONE" env-default:"Asia/Bangkok"`
 	BodyLimit         int             `env:"BODY_LIMIT" env-default:"1048576"`
 	RateLimit         RateLimitConfig `env-prefix:"RATE_LIMIT_"`
 	IdentityRateLimit RateLimitConfig `env-prefix:"IDENTITY_RATE_LIMIT_"`
 
 	Cors       CorsConfig       `env-prefix:"CORS_"`
 	TrustProxy TrustProxyConfig `env-prefix:"TRUST_PROXY_"`
+}
+
+func (c AppConfig) Location() *time.Location {
+	location, err := time.LoadLocation(c.Timezone)
+	if err != nil {
+		return time.UTC
+	}
+
+	return location
 }
 
 type RateLimitConfig struct {

@@ -12,7 +12,9 @@ var RepositorySet = wire.NewSet(
 	NewReadDB,
 	transaction.NewDepositRepository,
 	transaction.NewWithdrawalRepository,
+	transaction.NewSummaryRepository,
 
 	wire.Bind(new(domain.DepositRepository), new(*transaction.DepositRepository)),
 	wire.Bind(new(domain.WithdrawalRepository), new(*transaction.WithdrawalRepository)),
+	wire.Bind(new(domain.SummaryRepository), new(*transaction.SummaryRepository)),
 )

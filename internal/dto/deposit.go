@@ -13,6 +13,7 @@ type InitiateDepositRequest struct {
 
 type DepositQuery struct {
 	PaginationQuery
+	DateRangeQuery
 
 	Status string `query:"status" validate:"omitempty,oneof=PENDING SUBMITTED COMPLETED FAILED EXPIRED CANCELLED"`
 }

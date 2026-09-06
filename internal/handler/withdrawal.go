@@ -140,9 +140,21 @@ func (h *WithdrawalHandler) queryFrom(c fiber.Ctx) (domain.WithdrawalQuery, erro
 		return domain.WithdrawalQuery{}, response.NewValidateFormError(err)
 	}
 
+	dateFrom, err := dto.OptionalTime(query.DateFrom)
+	if err != nil {
+		return domain.WithdrawalQuery{}, response.NewValidateFormError(err)
+	}
+
+	dateTo, err := dto.OptionalTime(query.DateTo)
+	if err != nil {
+		return domain.WithdrawalQuery{}, response.NewValidateFormError(err)
+	}
+
 	return domain.WithdrawalQuery{
 		ListQuery:  query.ToListQuery(),
 		MerchantID: middleware.MerchantIDFromContext(c),
 		Status:     query.Status,
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
 	}, nil
 }

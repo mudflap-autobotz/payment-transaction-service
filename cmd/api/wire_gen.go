@@ -16,6 +16,7 @@ import (
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/repository/transaction"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/router"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/service/deposit"
+	"github.com/mudflap-autobotz/payment-transaction-service/internal/service/summary"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/service/withdrawal"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/token"
 )
@@ -45,9 +46,13 @@ func InitializeApp(cfg *config.Config) (*fiber.App, func(), error) {
 	withdrawalRepository := transaction.NewWithdrawalRepository(writeDB, readDB)
 	withdrawalService := withdrawal.NewWithdrawalService(withdrawalRepository, eventPublisher, cfg)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService, validate)
+	summaryRepository := transaction.NewSummaryRepository(readDB)
+	summaryService := summary.NewSummaryService(summaryRepository, cfg)
+	summaryHandler := handler.NewSummaryHandler(summaryService)
 	handlers := &handler.Handlers{
 		DepositHandler:    depositHandler,
 		WithdrawalHandler: withdrawalHandler,
+		SummaryHandler:    summaryHandler,
 	}
 	verifier, err := token.NewVerifier(cfg)
 	if err != nil {
