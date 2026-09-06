@@ -30,7 +30,7 @@ func NewRouter(cfg *config.Config, h *handler.Handlers, m *middleware.Middleware
 		return response.Success(c, fiber.Map{"status": "ok"})
 	})
 
-	InitDocsRouter(app)
+	InitDocsRouter(app, cfg)
 
 	InitMerchantRouter(app, h, m)
 
