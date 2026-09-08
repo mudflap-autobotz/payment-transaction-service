@@ -9,6 +9,7 @@ import (
 )
 
 var MiddlewareSet = wire.NewSet(
+	NewRatelimitStorage,
 	NewMiddlewares,
 )
 
@@ -21,13 +22,13 @@ type Middlewares struct {
 	Recovery          fiber.Handler
 }
 
-func NewMiddlewares(cfg *config.Config, verifier *jwt.Verifier) *Middlewares {
+func NewMiddlewares(cfg *config.Config, verifier *jwt.Verifier, storage fiber.Storage) *Middlewares {
 	return &Middlewares{
 		AuthMerchant:      NewAuthMerchantMiddleware(verifier),
 		Cors:              NewCorsMiddleware(cfg),
 		Logger:            NewLoggerMiddleware(cfg),
-		Ratelimit:         NewRatelimitMiddleware(cfg),
-		MerchantRatelimit: NewMerchantRatelimitMiddleware(cfg),
+		Ratelimit:         NewRatelimitMiddleware(cfg, storage),
+		MerchantRatelimit: NewMerchantRatelimitMiddleware(cfg, storage),
 		Recovery:          NewRecoveryMiddleware(),
 	}
 }

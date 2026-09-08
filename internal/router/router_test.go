@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mudflap-autobotz/payment-common/jwt/jwttest"
+	"github.com/mudflap-autobotz/payment-common/ratelimit"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/config"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/domain/mocks"
 	"github.com/mudflap-autobotz/payment-transaction-service/internal/handler"
@@ -59,7 +60,10 @@ func testMiddlewares(t *testing.T, cfg *config.Config) *middleware.Middlewares {
 	verifier, err := token.NewVerifier(cfg)
 	require.NoError(t, err)
 
-	return middleware.NewMiddlewares(cfg, verifier)
+	storage := ratelimit.NewMemoryStorage()
+	t.Cleanup(func() { _ = storage.Close() })
+
+	return middleware.NewMiddlewares(cfg, verifier, storage)
 }
 
 func newTestRouter(t *testing.T) *fiber.App {

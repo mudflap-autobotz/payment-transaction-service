@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/gofiber/fiber/v3"
 	logger "github.com/mudflap-autobotz/payment-common/logger"

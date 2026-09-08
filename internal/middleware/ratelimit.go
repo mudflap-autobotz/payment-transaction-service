@@ -8,13 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewRatelimitMiddleware(cfg *config.Config) fiber.Handler {
+const (
+	globalRatelimitKeyPrefix   = "transaction:global:"
+	merchantRatelimitKeyPrefix = "transaction:merchant:"
+)
+
+func NewRatelimitMiddleware(cfg *config.Config, storage fiber.Storage) fiber.Handler {
 
 	return limiter.New(limiter.Config{
+		Storage:    storage,
 		Max:        cfg.App.RateLimit.MaxRequests,
 		Expiration: cfg.App.RateLimit.Expiration,
 		KeyGenerator: func(c fiber.Ctx) string {
-			return c.IP()
+			return globalRatelimitKeyPrefix + c.IP()
 		},
 		LimitReached: func(c fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
@@ -30,13 +36,14 @@ func NewRatelimitMiddleware(cfg *config.Config) fiber.Handler {
 	})
 }
 
-func NewMerchantRatelimitMiddleware(cfg *config.Config) fiber.Handler {
+func NewMerchantRatelimitMiddleware(cfg *config.Config, storage fiber.Storage) fiber.Handler {
 
 	return limiter.New(limiter.Config{
+		Storage:    storage,
 		Max:        cfg.App.IdentityRateLimit.MaxRequests,
 		Expiration: cfg.App.IdentityRateLimit.Expiration,
 		KeyGenerator: func(c fiber.Ctx) string {
-			return MerchantIDFromContext(c).String()
+			return merchantRatelimitKeyPrefix + MerchantIDFromContext(c).String()
 		},
 		LimitReached: func(c fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{

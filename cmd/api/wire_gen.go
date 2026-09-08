@@ -61,9 +61,17 @@ func InitializeApp(cfg *config.Config) (*fiber.App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	middlewares := middleware.NewMiddlewares(cfg, verifier)
+	storage, cleanup4, err := middleware.NewRatelimitStorage(cfg)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	middlewares := middleware.NewMiddlewares(cfg, verifier, storage)
 	app := router.NewRouter(cfg, handlers, middlewares)
 	return app, func() {
+		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()
