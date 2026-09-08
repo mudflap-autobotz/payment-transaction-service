@@ -122,3 +122,24 @@ func TestLoadConfigFailsWithoutRequiredEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadConfigRejectsUnknownTimezone(t *testing.T) {
+	env := requiredEnv()
+	env["APP_TIMEZONE"] = "Mars/Olympus"
+	setEnv(t, env)
+
+	cfg, err := config.LoadConfig()
+
+	require.Error(t, err)
+	assert.Nil(t, cfg)
+}
+
+func TestLoadConfigResolvesDefaultTimezone(t *testing.T) {
+	setEnv(t, requiredEnv())
+
+	cfg, err := config.LoadConfig()
+
+	require.NoError(t, err)
+	assert.Equal(t, "Asia/Bangkok", cfg.App.Timezone)
+	assert.Equal(t, "Asia/Bangkok", cfg.App.Location().String())
+}

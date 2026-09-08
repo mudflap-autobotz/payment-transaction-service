@@ -85,6 +85,14 @@ func (c AppConfig) Location() *time.Location {
 	return location
 }
 
+func (c AppConfig) validateTimezone() error {
+	if _, err := time.LoadLocation(c.Timezone); err != nil {
+		return fmt.Errorf("invalid APP_TIMEZONE %q: %w", c.Timezone, err)
+	}
+
+	return nil
+}
+
 type RateLimitConfig struct {
 	MaxRequests int           `env:"MAX_REQUESTS" env-default:"100"`
 	Expiration  time.Duration `env:"EXPIRATION" env-default:"1m"`
@@ -153,11 +161,13 @@ func LoadConfig() (*Config, error) {
 		if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
 			return nil, fmt.Errorf("Load config: %w", err)
 		}
-		return &cfg, nil
-	}
-
-	if err := cleanenv.ReadEnv(&cfg); err != nil {
+	} else if err := cleanenv.ReadEnv(&cfg); err != nil {
 		return nil, fmt.Errorf("Load config: %w", err)
 	}
+
+	if err := cfg.App.validateTimezone(); err != nil {
+		return nil, fmt.Errorf("Load config: %w", err)
+	}
+
 	return &cfg, nil
 }
