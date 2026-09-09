@@ -14,7 +14,7 @@ type InitiateDepositRequest struct {
 type DepositQuery struct {
 	PaginationQuery
 
-	Status string `query:"status" validate:"omitempty,oneof=PENDING SUBMITTED COMPLETED FAILED EXPIRED CANCELLED"`
+	Status string `query:"status" validate:"omitempty,oneof=PENDING SUBMITTED UNCONFIRMED COMPLETED FAILED EXPIRED CANCELLED"`
 }
 
 type DepositResponse struct {
