@@ -10,12 +10,13 @@ const (
 	TransactionTypeDeposit    = "DEPOSIT"
 	TransactionTypeWithdrawal = "WITHDRAWAL"
 
-	TransactionStatusPending   = "PENDING"
-	TransactionStatusSubmitted = "SUBMITTED"
-	TransactionStatusCompleted = "COMPLETED"
-	TransactionStatusFailed    = "FAILED"
-	TransactionStatusExpired   = "EXPIRED"
-	TransactionStatusCancelled = "CANCELLED"
+	TransactionStatusPending     = "PENDING"
+	TransactionStatusSubmitted   = "SUBMITTED"
+	TransactionStatusUnconfirmed = "UNCONFIRMED"
+	TransactionStatusCompleted   = "COMPLETED"
+	TransactionStatusFailed      = "FAILED"
+	TransactionStatusExpired     = "EXPIRED"
+	TransactionStatusCancelled   = "CANCELLED"
 
 	MaxMerchantReferenceLength = 100
 )
