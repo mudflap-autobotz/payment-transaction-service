@@ -71,7 +71,10 @@ func TestLoadConfigAppliesDefaults(t *testing.T) {
 	assert.Equal(t, "100.00", cfg.Transaction.MinWithdrawal)
 	assert.Equal(t, "500000.00", cfg.Transaction.MaxWithdrawal)
 	assert.Equal(t, 30*time.Minute, cfg.Transaction.QRExpiry)
-	assert.Equal(t, []string{"SCB", "KTB", "BAY", "BBL"}, cfg.Transaction.AllowedBankCodes)
+	assert.Equal(t, []string{"KTB", "SCB", "BAY"}, cfg.Transaction.SourceBankCodes)
+	assert.Contains(t, cfg.Transaction.DestinationBankCodes, "KBANK")
+	assert.Contains(t, cfg.Transaction.DestinationBankCodes, "TTB")
+	assert.Len(t, cfg.Transaction.DestinationBankCodes, 23)
 
 	assert.Equal(t, "info", cfg.Log.Level)
 	assert.Equal(t, "json", cfg.Log.Format)
@@ -87,7 +90,8 @@ func TestLoadConfigOverridesDefaults(t *testing.T) {
 	env["PROMPTPAY_TARGET"] = "1234567890123"
 	env["TRANSACTION_QR_EXPIRY"] = "10m"
 	env["TRANSACTION_MIN_WITHDRAWAL"] = "1000.00"
-	env["TRANSACTION_ALLOWED_BANK_CODES"] = "SCB,KBANK"
+	env["TRANSACTION_SOURCE_BANK_CODES"] = "KTB"
+	env["TRANSACTION_DESTINATION_BANK_CODES"] = "SCB,KBANK"
 	setEnv(t, env)
 
 	cfg, err := config.LoadConfig()
@@ -99,7 +103,8 @@ func TestLoadConfigOverridesDefaults(t *testing.T) {
 	assert.Equal(t, "1234567890123", cfg.PromptPay.Target)
 	assert.Equal(t, 10*time.Minute, cfg.Transaction.QRExpiry)
 	assert.Equal(t, "1000.00", cfg.Transaction.MinWithdrawal)
-	assert.Equal(t, []string{"SCB", "KBANK"}, cfg.Transaction.AllowedBankCodes)
+	assert.Equal(t, []string{"KTB"}, cfg.Transaction.SourceBankCodes)
+	assert.Equal(t, []string{"SCB", "KBANK"}, cfg.Transaction.DestinationBankCodes)
 }
 
 func TestLoadConfigFailsWithoutRequiredEnv(t *testing.T) {

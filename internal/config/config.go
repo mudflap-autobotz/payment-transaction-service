@@ -42,12 +42,13 @@ type PromptPayConfig struct {
 }
 
 type TransactionConfig struct {
-	MinDeposit       string        `env:"MIN_DEPOSIT" env-default:"100.00"`
-	MaxDeposit       string        `env:"MAX_DEPOSIT" env-default:"1000000.00"`
-	MinWithdrawal    string        `env:"MIN_WITHDRAWAL" env-default:"100.00"`
-	MaxWithdrawal    string        `env:"MAX_WITHDRAWAL" env-default:"500000.00"`
-	QRExpiry         time.Duration `env:"QR_EXPIRY" env-default:"30m"`
-	AllowedBankCodes []string      `env:"ALLOWED_BANK_CODES" env-default:"SCB,KTB,BAY,BBL"`
+	MinDeposit           string        `env:"MIN_DEPOSIT" env-default:"100.00"`
+	MaxDeposit           string        `env:"MAX_DEPOSIT" env-default:"1000000.00"`
+	MinWithdrawal        string        `env:"MIN_WITHDRAWAL" env-default:"100.00"`
+	MaxWithdrawal        string        `env:"MAX_WITHDRAWAL" env-default:"500000.00"`
+	QRExpiry             time.Duration `env:"QR_EXPIRY" env-default:"30m"`
+	SourceBankCodes      []string      `env:"SOURCE_BANK_CODES" env-default:"KTB,SCB,BAY"`
+	DestinationBankCodes []string      `env:"DESTINATION_BANK_CODES" env-default:"KBANK,SCB,BBL,KTB,BAY,TTB,TMB,GSB,BAAC,UOB,GHB,CIMB,LNH,KKB,KKP,KNK,CITI,SCBT,TISCO,ISBT,HSBC,ICBC,TCRB"`
 }
 
 type AppConfig struct {
