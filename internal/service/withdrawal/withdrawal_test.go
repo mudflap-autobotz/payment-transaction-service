@@ -27,9 +27,10 @@ func newConfig() *config.Config {
 			PublishTimeout:         time.Second,
 		},
 		Transaction: config.TransactionConfig{
-			MinWithdrawal:    "100.00",
-			MaxWithdrawal:    "500000.00",
-			AllowedBankCodes: []string{"SCB", "KTB", "BAY", "BBL"},
+			MinWithdrawal:        "100.00",
+			MaxWithdrawal:        "500000.00",
+			SourceBankCodes:      []string{"KTB", "SCB", "BAY"},
+			DestinationBankCodes: []string{"SCB", "KTB", "BAY", "BBL", "KBANK"},
 		},
 	}
 }
@@ -154,7 +155,7 @@ func TestInitiate(t *testing.T) {
 	})
 
 	t.Run("rejects unsupported bank codes", func(t *testing.T) {
-		for _, bankCode := range []string{"KBANK", "", "  ", "scb1"} {
+		for _, bankCode := range []string{"MEGA", "", "  ", "scb1"} {
 			repo, publisher, service := setup(t)
 			input := validInput(uuid.New())
 			input.BankCode = bankCode
@@ -226,6 +227,41 @@ func TestInitiate(t *testing.T) {
 			assert.Nil(t, result)
 			publisher.AssertNotCalled(t, "Publish")
 		}
+	})
+
+	t.Run("accepts a destination bank that is not a source bank", func(t *testing.T) {
+		repo, publisher, service := setup(t)
+		merchantID := uuid.New()
+
+		repo.EXPECT().
+			Create(mock.Anything, mock.MatchedBy(func(input domain.CreateWithdrawal) bool {
+				return input.BankCode == "KBANK"
+			}), mock.Anything).
+			Return(createdWithdrawal(merchantID, "1000.00"), nil).
+			Once()
+
+		publisher.EXPECT().Publish(mock.Anything, mock.Anything).Return(nil).Once()
+
+		input := validInput(merchantID)
+		input.BankCode = "KBANK"
+
+		result, err := service.Initiate(context.Background(), actor(), input)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("rejects a destination bank outside the list", func(t *testing.T) {
+		repo, publisher, service := setup(t)
+		input := validInput(uuid.New())
+		input.BankCode = "MEGA"
+
+		result, err := service.Initiate(context.Background(), actor(), input)
+
+		assert.ErrorIs(t, err, domain.ErrInvalidBankCode)
+		assert.Nil(t, result)
+		repo.AssertNotCalled(t, "Create")
+		publisher.AssertNotCalled(t, "Publish")
 	})
 }
 

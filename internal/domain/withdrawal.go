@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,11 +11,13 @@ import (
 type Withdrawal struct {
 	Transaction
 
-	BankCode      string
-	AccountNumber string
-	AccountName   string
-	SubmittedAt   *time.Time
-	ConfirmedAt   *time.Time
+	BankCode            string
+	AccountNumber       string
+	AccountName         string
+	SourceBankAccountID *uuid.UUID
+	BankResponse        json.RawMessage
+	SubmittedAt         *time.Time
+	ConfirmedAt         *time.Time
 }
 
 type WithdrawalQuery struct {

@@ -21,7 +21,7 @@ type WithdrawalQuery struct {
 	PaginationQuery
 	DateRangeQuery
 
-	Status string `query:"status" validate:"omitempty,oneof=PENDING SUBMITTED COMPLETED FAILED EXPIRED CANCELLED"`
+	Status string `query:"status" validate:"omitempty,oneof=PENDING SUBMITTED UNCONFIRMED COMPLETED FAILED EXPIRED CANCELLED"`
 }
 
 type WithdrawalResponse struct {

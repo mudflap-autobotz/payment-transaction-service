@@ -25,29 +25,29 @@ const (
 )
 
 type WithdrawalService struct {
-	withdrawalRepo   domain.WithdrawalRepository
-	publisher        domain.EventPublisher
-	limits           config.TransactionConfig
-	allowedBankCodes map[string]bool
-	topic            string
-	publishTimeout   time.Duration
-	tracer           trace.Tracer
+	withdrawalRepo       domain.WithdrawalRepository
+	publisher            domain.EventPublisher
+	limits               config.TransactionConfig
+	destinationBankCodes map[string]bool
+	topic                string
+	publishTimeout       time.Duration
+	tracer               trace.Tracer
 }
 
 func NewWithdrawalService(repo domain.WithdrawalRepository, publisher domain.EventPublisher, cfg *config.Config) *WithdrawalService {
-	allowedBankCodes := make(map[string]bool, len(cfg.Transaction.AllowedBankCodes))
-	for _, bankCode := range cfg.Transaction.AllowedBankCodes {
-		allowedBankCodes[strings.ToUpper(strings.TrimSpace(bankCode))] = true
+	destinationBankCodes := make(map[string]bool, len(cfg.Transaction.DestinationBankCodes))
+	for _, bankCode := range cfg.Transaction.DestinationBankCodes {
+		destinationBankCodes[strings.ToUpper(strings.TrimSpace(bankCode))] = true
 	}
 
 	return &WithdrawalService{
-		withdrawalRepo:   repo,
-		publisher:        publisher,
-		limits:           cfg.Transaction,
-		allowedBankCodes: allowedBankCodes,
-		topic:            cfg.Kafka.TopicWithdrawalCreated,
-		publishTimeout:   cfg.Kafka.PublishTimeout,
-		tracer:           otel.Tracer("service.withdrawal"),
+		withdrawalRepo:       repo,
+		publisher:            publisher,
+		limits:               cfg.Transaction,
+		destinationBankCodes: destinationBankCodes,
+		topic:                cfg.Kafka.TopicWithdrawalCreated,
+		publishTimeout:       cfg.Kafka.PublishTimeout,
+		tracer:               otel.Tracer("service.withdrawal"),
 	}
 }
 
@@ -223,7 +223,7 @@ func (s *WithdrawalService) normalizeAmount(raw string) (string, error) {
 
 func (s *WithdrawalService) normalizeBankCode(raw string) (string, error) {
 	normalized := strings.ToUpper(strings.TrimSpace(raw))
-	if !s.allowedBankCodes[normalized] {
+	if !s.destinationBankCodes[normalized] {
 		return "", domain.ErrInvalidBankCode
 	}
 
