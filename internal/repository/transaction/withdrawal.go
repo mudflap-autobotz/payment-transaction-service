@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const withdrawalColumns = "wd.bank_code, wd.account_number, wd.account_name, wd.submitted_at, wd.confirmed_at"
+const withdrawalColumns = "wd.bank_code, wd.account_number, wd.account_name, wd.source_bank_account_id, wd.bank_response, wd.submitted_at, wd.confirmed_at"
 
 type WithdrawalRepository struct {
 	writeDB *database.WriteDB

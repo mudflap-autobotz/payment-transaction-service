@@ -72,8 +72,10 @@ func TestLoadConfigAppliesDefaults(t *testing.T) {
 	assert.Equal(t, "500000.00", cfg.Transaction.MaxWithdrawal)
 	assert.Equal(t, 30*time.Minute, cfg.Transaction.QRExpiry)
 	assert.Equal(t, []string{"KTB", "SCB", "BAY"}, cfg.Transaction.SourceBankCodes)
-	assert.Contains(t, cfg.Transaction.DestinationBankCodes, "KBANK")
-	assert.Contains(t, cfg.Transaction.DestinationBankCodes, "TTB")
+	assert.Equal(t, []string{
+		"KBANK", "SCB", "BBL", "KTB", "BAY", "TTB", "TMB", "GSB", "BAAC", "UOB", "GHB", "CIMB",
+		"LNH", "KKB", "KKP", "KNK", "CITI", "SCBT", "TISCO", "ISBT", "HSBC", "ICBC", "TCRB",
+	}, cfg.Transaction.DestinationBankCodes)
 	assert.Len(t, cfg.Transaction.DestinationBankCodes, 23)
 
 	assert.Equal(t, "info", cfg.Log.Level)

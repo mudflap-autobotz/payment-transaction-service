@@ -74,11 +74,13 @@ type depositRow struct {
 type withdrawalRow struct {
 	TransactionDB
 
-	BankCode      string     `bun:"bank_code"`
-	AccountNumber string     `bun:"account_number"`
-	AccountName   string     `bun:"account_name"`
-	SubmittedAt   *time.Time `bun:"submitted_at"`
-	ConfirmedAt   *time.Time `bun:"confirmed_at"`
+	BankCode            string          `bun:"bank_code"`
+	AccountNumber       string          `bun:"account_number"`
+	AccountName         string          `bun:"account_name"`
+	SourceBankAccountID *uuid.UUID      `bun:"source_bank_account_id"`
+	BankResponse        json.RawMessage `bun:"bank_response"`
+	SubmittedAt         *time.Time      `bun:"submitted_at"`
+	ConfirmedAt         *time.Time      `bun:"confirmed_at"`
 }
 
 func (m TransactionDB) toDomain() domain.Transaction {
@@ -109,12 +111,14 @@ func (r depositRow) ToDomain() domain.Deposit {
 
 func (r withdrawalRow) ToDomain() domain.Withdrawal {
 	return domain.Withdrawal{
-		Transaction:   r.TransactionDB.toDomain(),
-		BankCode:      r.BankCode,
-		AccountNumber: r.AccountNumber,
-		AccountName:   r.AccountName,
-		SubmittedAt:   r.SubmittedAt,
-		ConfirmedAt:   r.ConfirmedAt,
+		Transaction:         r.TransactionDB.toDomain(),
+		BankCode:            r.BankCode,
+		AccountNumber:       r.AccountNumber,
+		AccountName:         r.AccountName,
+		SourceBankAccountID: r.SourceBankAccountID,
+		BankResponse:        r.BankResponse,
+		SubmittedAt:         r.SubmittedAt,
+		ConfirmedAt:         r.ConfirmedAt,
 	}
 }
 
